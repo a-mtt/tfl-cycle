@@ -92,7 +92,7 @@ with DAG(
     schedule_interval="@monthly",
     start_date=datetime(2015,1,1,tzinfo=timezone.utc),
     catchup=True,
-    description="Getting all data from tfl",
+    description="Getting monthly data from tfl",
     default_args={"depends_on_past": True}
 ) as dag:
     s3_url='https://s3-eu-west-1.amazonaws.com/cycling.data.tfl.gov.uk/'
