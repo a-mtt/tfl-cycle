@@ -3,4 +3,6 @@ notebooks
 .env
 .envrc
 data
-
+*/__pycache__
+logs/**
+scripts/**
