@@ -26,11 +26,6 @@ cd tfl-cycle
 poetry install
 ```
 
-### Step 2: Install Dependencies with Poetry
-```bash
-poetry install
-```
-
 ### Step 3: Build and Start Docker Containers
 ```bash
 docker compose up
