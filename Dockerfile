@@ -6,8 +6,6 @@ ENV PYTHONUNBUFFERED 1
 
 ENV AIRFLOW_HOME=/app/airflow
 
-RUN apt-get update
-
 WORKDIR $AIRFLOW_HOME
 
 COPY scripts scripts
