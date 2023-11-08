@@ -14,9 +14,8 @@ def get_wanted_files_dates(bucket_name:str, yyyymm:str):
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
     iterator = bucket.list_blobs(prefix='bronze/')
-    response = iterator._get_next_page_response()
 
-    get_fnames = [i['name'].split("/")[-1] for i in response['items']]
+    get_fnames = [i.name.split("/")[-1] for i in iterator]
     get_dates = [i[:7] for i in get_fnames]
 
     file_list = []
@@ -57,12 +56,22 @@ def prepare_data(current_date:str, **context):
 def download_from_gcs(bucket_name:str, **context):
     ti=context['ti']
     file_list=ti.xcom_pull(task_ids='get_files_names')
+
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
-    path=f'./data'
     for file in file_list:
         blob = bucket.blob(f'bronze/{file}')
-        blob.download_to_filename(os.path.join(path, file))
+        blob.download_to_filename(f'bronze/{file.split("/")[-1]}')
+
+def upload_to_gcs(bucket_name,**context):
+    ti=context['ti']
+    file_list=ti.xcom_pull(task_ids='get_files_names')
+
+    storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
+    bucket = storage_client.get_bucket(bucket_name)
+    for file in file_list:
+        blob = bucket.blob(f'silver/{file}')
+        blob.upload_from_filename(f'./data/silver/{file.split("/")[-1]}')
 
 with DAG(
     "simple_GCS",
@@ -82,13 +91,6 @@ with DAG(
                    "yyyymm":current_year_month}
     )
 
-    prepare_data_task = PythonOperator(
-        task_id="prepare_data",
-        python_callable=prepare_data,
-        op_kwargs={"current_date":current_date},
-        provide_context=True
-    )
-
     download_from_gcs_task = PythonOperator(
         task_id="download_from_gcs",
         python_callable=download_from_gcs,
@@ -96,4 +98,18 @@ with DAG(
         provide_context=True
     )
 
-    get_files_names_task >> prepare_data_task >> download_from_gcs_task
+    prepare_data_task = PythonOperator(
+        task_id="prepare_data",
+        python_callable=prepare_data,
+        op_kwargs={"current_date":current_date},
+        provide_context=True
+    )
+
+    upload_to_gcs_task = PythonOperator(
+        task_id="upload_to_gcs",
+        python_callable=upload_to_gcs,
+        op_kwargs={"bucket_name": BUCKET_NAME},
+        provide_context=True
+    )
+
+    get_files_names_task >> download_from_gcs_task >> prepare_data_task >> upload_to_gcs_task
