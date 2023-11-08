@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import time
 
 from google.cloud import storage
 
@@ -26,11 +27,12 @@ def get_wanted_files_dates(bucket_name:str, yyyymm:str):
     return file_list
 
 def prepare_data(current_date:str, **context):
+    time.sleep(10)
     ti=context['ti']
     file_list=ti.xcom_pull(task_ids='get_files_names')
 
     for file_path in file_list:
-        df = pd.read_parquet(file_path)
+        df = pd.read_parquet(f'./data/bronze/{file_path.split("/")[-1]}')
 
         if "Rental Id" in df.columns:
             df = df.rename(columns={'Rental Id': 'Number',
@@ -53,6 +55,8 @@ def prepare_data(current_date:str, **context):
 
         df.to_parquet(f'./data/silver/{file_path.split("/")[-1]}')
 
+
+
 def download_from_gcs(bucket_name:str, **context):
     ti=context['ti']
     file_list=ti.xcom_pull(task_ids='get_files_names')
@@ -60,8 +64,9 @@ def download_from_gcs(bucket_name:str, **context):
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
     for file in file_list:
-        blob = bucket.blob(f'bronze/{file}')
-        blob.download_to_filename(f'bronze/{file.split("/")[-1]}')
+        blob = bucket.blob(f'bronze/{file.split("/")[-1]}')
+        blob.download_to_filename(f'./data/bronze/{file.split("/")[-1]}')
+        time.sleep(5)
 
 def upload_to_gcs(bucket_name,**context):
     ti=context['ti']
@@ -70,7 +75,7 @@ def upload_to_gcs(bucket_name,**context):
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
     for file in file_list:
-        blob = bucket.blob(f'silver/{file}')
+        blob = bucket.blob(f'silver/{file.split("/")[-1]}')
         blob.upload_from_filename(f'./data/silver/{file.split("/")[-1]}')
 
 with DAG(
@@ -102,7 +107,8 @@ with DAG(
         task_id="prepare_data",
         python_callable=prepare_data,
         op_kwargs={"current_date":current_date},
-        provide_context=True
+        provide_context=True,
+
     )
 
     upload_to_gcs_task = PythonOperator(
