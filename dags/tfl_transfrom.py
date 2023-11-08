@@ -97,11 +97,7 @@ with DAG(
     #               "bucket_name":BUCKET_NAME}
     #)
 
-    LoggingMixin().log.info(get_wanted_files)
-
-    breakpoint()
-
-    tasks_array = []
+    tasks_array =[]
 
     for gwf, gwo in zip(get_wanted_files, get_wanted_objects):
         download_files_to_local_task = PythonOperator(
