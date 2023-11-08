@@ -19,7 +19,7 @@ st.write('This is the content of page 2.')
 
 # Cache the query to prevent re-running it on each app interaction
 
-table_data = query_all_from_table(bq_client, dataset_name=DATASET_NAME, table_name=TABLE_NAME)
+table_data = query_all_from_table(CREDENTIALS_PATH, dataset_name=DATASET_NAME, table_name=TABLE_NAME)
 
 st.dataframe(table_data)
 
