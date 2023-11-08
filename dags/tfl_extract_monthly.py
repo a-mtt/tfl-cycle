@@ -13,12 +13,12 @@ from google.cloud import storage
 
 AIRFLOW_HOME = os.getenv("AIRFLOW_HOME")
 
-def get_list_files(storage_url: str):
+def get_list_files(storage_url: str) -> list:
     """
     Reads an S3 bucket url link (for TfL cycling data)
     Returns a list of usage-stats csv files
     """
-    page=requests.get(s3_url)
+    page=requests.get(storage_url)
     soup=BeautifulSoup(page.text,features='xml')
     pattern=re.compile(r'usage-stats.*csv')
     keys=soup.find_all('Key',string=pattern)
@@ -48,84 +48,70 @@ def modify_filename(filename: str) -> str:
                 break
     if len(month)!=2:
         month='0'+month
-    return f'{year}{month}{day}.parquet'
+    return f'{year}{month}{day}'
 
 def csv_to_parquet(storage_url: str, storage_path: str) -> None:
     """
     Reads a csv file with pandas and saves it as parquet
     """
     download_link=storage_url+storage_path
-    try:
-        df=pd.read_csv(download_link.replace(" ","%20"),low_memory=False)
-        df.to_parquet(f'{AIRFLOW_HOME}/data/{modify_filename(download_link)}')
-    except:
-        pass
+    df=pd.read_csv(download_link.replace(" ","%20"),low_memory=False)
+    df.to_parquet(f'{AIRFLOW_HOME}/data/{modify_filename(download_link)}.parquet')
 
-def get_all_files(storage_url:str)-> None:
+
+def get_monthly_files(storage_url:str, yyyymm:str)-> list:
     """
     Reads the list of all files in usage-stats and saves them locally to parquet
     """
     all_files=get_list_files(storage_url)
-    [csv_to_parquet(storage_url,file_path) for file_path in all_files]
+    date_named_files=[modify_filename(file) for file in all_files]
+    file_list=[]
+    for date_name,file in zip(date_named_files,all_files):
+        if date_name.startswith(yyyymm):
+            csv_to_parquet(storage_url,file)
+            file_list.append(f'{date_name}.parquet')
+    return file_list
 
-def upload_to_gcs(filename:str) -> None:
-    #getlistfiles
-    #csv_to_parquet
-    #upload_to_gcs
-    pass
-
-def upload_all_to_bucket(bucket_name):
-    """ Upload data to a bucket"""
-
-    # Explicitly use service account credentials by specifying the private key
-    # file.
+def upload_monthly_bucket(bucket_name,**context):
+    ti=context['ti']
+    file_list=ti.xcom_pull(task_ids='download_csv')
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
 
     #print(buckets = list(storage_client.list_buckets())
 
     bucket = storage_client.get_bucket(bucket_name)
     path=f'{AIRFLOW_HOME}/data'
-    for file in os.listdir(path):
-        blob = bucket.blob(file)
+    for file in file_list:
+        blob = bucket.blob(f'bronze/{file}')
         blob.upload_from_filename(os.path.join(path,file))
-
-def upload_to_bucket(blob_name, path_to_file, bucket_name):
-    """ Upload data to a bucket"""
-
-    # Explicitly use service account credentials by specifying the private key
-    # file.
-    storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
-
-    #print(buckets = list(storage_client.list_buckets())
-
-    bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.upload_from_filename(path_to_file)
 
 
 
 with DAG(
-    "tfl_elt",
+    "tfl_elt_monthly",
     schedule_interval="@monthly",
-    start_date=datetime(2023,10,18,tzinfo=timezone.utc),
+    start_date=datetime(2015,1,1,tzinfo=timezone.utc),
     catchup=True,
-    description="Getting all data from tfl",
+    description="Getting monthly data from tfl",
     default_args={"depends_on_past": True}
 ) as dag:
     s3_url='https://s3-eu-west-1.amazonaws.com/cycling.data.tfl.gov.uk/'
+    date='{{ds_nodash[:6]}}'
     download_task=PythonOperator(
         task_id="download_csv",
-        python_callable=get_all_files,
+        python_callable=get_monthly_files,
         op_kwargs={
-            "storage_url":s3_url
+            "storage_url":s3_url,
+            "yyyymm":date
         }
     )
     upload_local_file_to_gcs_task = PythonOperator(
         task_id="upload_parquet_to_gcs",
-        python_callable=upload_all_to_bucket,
+        python_callable=upload_monthly_bucket,
         op_kwargs={
             "bucket_name":"tfl-cycle-1413"
-        }
+        },
+        provide_context=True
     )
 
     download_task >> upload_local_file_to_gcs_task
