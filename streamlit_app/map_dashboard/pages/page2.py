@@ -1,12 +1,12 @@
 import streamlit as st
 from streamlit_keplergl import keplergl_static
 from keplergl import KeplerGl
-from map_dashboard.advanced.bigquery_helper import create_bigquery_client, query_all_from_table
+from map_dashboard.advanced.bigquery_helper import *
 import os
 
+st.set_page_config(layout="wide")
+
 CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
-DATASET_NAME = os.getenv('DATASET_NAME')
-TABLE_NAME = os.getenv('TABLE_NAME')
 bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
 
 #@st.cache(ttl=600, show_spinner=True)
@@ -19,11 +19,10 @@ st.write('This is the content of page 2.')
 
 # Cache the query to prevent re-running it on each app interaction
 
-table_data = query_all_from_table(CREDENTIALS_PATH, dataset_name=DATASET_NAME, table_name=TABLE_NAME)
+table_data = query_map_one()
 
-st.dataframe(table_data)
-
-map_1 = KeplerGl(height=400)
+map_1 = KeplerGl(height=800)
+map_1.add_data(data=table_data, name='data_1')
 keplergl_static(map_1)
 
 st.write("This is a kepler.gl map in streamlit")

@@ -1,28 +1,17 @@
 import streamlit as st
 st.set_page_config(layout="wide")
-from map_dashboard.advanced.bigquery_helper import create_bigquery_client, query_all_from_table
+from map_dashboard.advanced.bigquery_helper import query_all_from_table
 import os
 import numpy as np
 import plotly.express as px
 import pandas as pd
 from streamlit_keplergl import keplergl_static
 from keplergl import KeplerGl
+from map_dashboard.advanced.transfo_functions import *
 
 CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
 DATASET_NAME = os.getenv('DATASET_NAME')
 TABLE_NAME = os.getenv('TABLE_NAME')
-
-### DEFINING HELPER FUNCTIONS
-
-def clean_column_names(df):
-    # Strip whitespace, lowercase, and replace spaces with underscores for each column name
-    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
-    return df
-
-def extract_neighborhood(df, column_name, neighborhood_column_name):
-    # Split the column on the comma and take the second part (strip to remove leading/trailing spaces)
-    df[neighborhood_column_name] = df[column_name].str.split(',').str[1].str.strip()
-    return df
 
 ### QUERYING DATA
 

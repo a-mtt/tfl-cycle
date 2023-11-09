@@ -1,18 +1,18 @@
 import streamlit as st
-st.set_page_config(layout="wide")
-from map_dashboard.advanced.bigquery_helper import create_bigquery_client, query_all_from_table
 import os
 import numpy as np
 import plotly.express as px
 import pandas as pd
 
-CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
-DATASET_NAME = os.getenv('DATASET_NAME')
-TABLE_NAME = os.getenv('TABLE_NAME')
+from map_dashboard.advanced.bigquery_helper import *
+from map_dashboard.advanced.transfo_functions import *
 
-#bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
-query = f"SELECT * FROM `{DATASET_NAME}.{TABLE_NAME}` WHERE Total_duration < 8000000 LIMIT 100000"
-table_data = query_all_from_table(CREDENTIALS_PATH, dataset_name=DATASET_NAME, table_name=TABLE_NAME, query= query)
+CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
+
+st.set_page_config(layout="wide")
+
+client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
+table_data = query_main_page()
 
 df = table_data
 
@@ -25,47 +25,6 @@ df['Start_date'] = pd.to_datetime(df['Start_date'], format='mixed')
 min_date = df['Start_date'].min()
 max_date = df['Start_date'].max()
 
-def create_duration_distribution_chart(data, duration_col='Total_duration__ms_'):
-    """
-    Create a distribution chart of ride durations in minutes.
-
-    Parameters:
-    - data: DataFrame containing the bike rides data
-    - duration_col: the name of the column containing duration in milliseconds
-
-    Returns:
-    - A Plotly figure object
-    """
-    # Convert 'Total_duration_ms' from milliseconds to minutes in a separate Series
-    duration_minutes = data[duration_col] / (1000 * 60)
-
-    # Create bins of 4-minute intervals for the 'Duration_minutes' Series
-    bin_width = 4
-    bins = np.arange(0, duration_minutes.max() + bin_width, bin_width)
-    duration_bins = pd.cut(duration_minutes, bins=bins, include_lowest=True)
-
-    # Calculate the distribution of ride durations within the bins
-    duration_distribution = duration_bins.value_counts().sort_index()
-
-    # Create a DataFrame from the distribution for plotting
-    distribution_df = pd.DataFrame({
-        'Duration Bins (minutes)': [f'{int(bin.left)}-{int(bin.right)}' for bin in duration_distribution.index],
-        'Number of Rides': duration_distribution.values
-    })
-
-    # Create the chart
-    fig = px.bar(
-        distribution_df,
-        x='Duration Bins (minutes)',
-        y='Number of Rides',
-        labels={'Duration Bins (minutes)': 'Duration (minutes)', 'Number of Rides': 'Number of Rides'},
-        title='Distribution of Ride Durations'
-    )
-
-    # Update x-axis tick angle for better readability
-    fig.update_layout(xaxis_tickangle=-45)
-
-    return fig
 
 class Bikesdashboard:
     def __init__(self) -> None:
@@ -75,14 +34,6 @@ class Bikesdashboard:
         """Layout the views of the dashboard"""
 
         st.title("London Bikes Dashboard")
-
-
-        # Sidebar: Selection of bike model
-#        bike_model = st.sidebar.multiselect(
-#            'Select Bike Model:',
-#            options=df['Bike_model'].unique(),
-#            default=df['Bike_model'].unique()
-#        )
 
         # Sidebar: Selection of Start Station
         start_station = st.sidebar.multiselect(
