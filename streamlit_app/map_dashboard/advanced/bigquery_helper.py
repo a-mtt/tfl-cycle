@@ -15,82 +15,38 @@ def create_bigquery_client(credentials_path):
     client = bigquery.Client(credentials=credentials, location="US")
     return client
 
-def query_main_page():
+@st.cache_data
+def query_main_aggregated_rides():
     client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
-    query = """
-                SELECT
-                    *
-                FROM `data-eng-q4-23.tfl_project.rides_facts`
-                WHERE LEFT(date,4)="2015"
-                LIMIT 10000
-
-    """
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_daily_total`"
     query_job = client.query(query)
     return query_job.result().to_dataframe()
 
+@st.cache_data
+def query_main_rides_distribution():
+    client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_daily_distribution`"
+    query_job = client.query(query)
+    return query_job.result().to_dataframe()
+
+@st.cache_data
 def query_map_one():
 
     client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
-    query = """
-                    WITH stations AS (
-                SELECT
-                    *
-                FROM `data-eng-q4-23.tfl_project.stations_dim`),
-                rides AS (
-                SELECT
-                    *
-                FROM `data-eng-q4-23.tfl_project.rides_facts`
-                WHERE LEFT(date,4)="2015"),
-                district AS (
-                SELECT
-                    *
-                FROM `data-eng-q4-23.tfl_project.district_dim`
-                ),
-                geo AS (
-                SELECT
-                    station_number,
-                    d.district,
-                    district_lon,
-                    district_lat
-                FROM stations s
-                LEFT JOIN district d ON s.district = d.district
-                ),
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.map_top_routes`"
+    query_job = client.query(query)
+    return query_job.result().to_dataframe()
 
-                join_table AS (
-                SELECT
-                    r.*,
-                    g_s.district AS district_start,
-                    g_e.district AS district_end,
-                    g_s.district_lon AS lon_start,
-                    g_s.district_lat AS lat_start,
-                    g_e.district_lon AS lon_end,
-                    g_e.district_lat AS lat_end
-                FROM rides r
-                LEFT JOIN geo g_s ON r.Start_station = g_s.station_number
-                LEFT JOIN geo g_e ON r.End_station = g_e.station_number ),
+@st.cache_data
+def query_start_district():
+    client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_daily_per_district_start`"
+    query_job = client.query(query)
+    return query_job.result().to_dataframe()
 
-                agg_table AS (
-                SELECT
-                    lon_start,
-                    lat_start,
-                    lat_end,
-                    lon_end,
-                    district_start,
-                    district_end,
-                    count(*) AS nb_rides
-                FROM join_table
-                GROUP BY 1,2,3,4,5,6),
-
-                rank_table AS (
-                SELECT
-                    *,
-                    RANK() OVER (PARTITION BY district_start ORDER BY nb_rides DESC) as rank
-                FROM agg_table )
-
-                SELECT
-                *
-                FROM rank_table
-                WHERE rank = 1 """
-
+@st.cache_data
+def query_end_district():
+    client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_daily_per_district_end`"
     query_job = client.query(query)
     return query_job.result().to_dataframe()

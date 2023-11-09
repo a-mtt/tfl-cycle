@@ -7,7 +7,7 @@ services:
     volumes:
       - ./.streamlit:/app/.streamlit/
       - ./map_dashboard:/app/map_dashboard/
-    command: ["streamlit", "run", "map_dashboard/advanced_iii.py"]
+    command: ["streamlit", "run", "map_dashboard/Home page.py"]
     ports:
       - 8501:8501
 #   depends_on:
