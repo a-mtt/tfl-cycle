@@ -10,14 +10,15 @@ CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
 DATASET_NAME = os.getenv('DATASET_NAME')
 TABLE_NAME = os.getenv('TABLE_NAME')
 
-bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
-table_data = query_all_from_table(CREDENTIALS_PATH, dataset_name=DATASET_NAME, table_name=TABLE_NAME)
+#bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
+query = f"SELECT * FROM `{DATASET_NAME}.{TABLE_NAME}` WHERE Total_duration < 8000000 LIMIT 100000"
+table_data = query_all_from_table(CREDENTIALS_PATH, dataset_name=DATASET_NAME, table_name=TABLE_NAME, query= query)
 
 df = table_data
 
 # Convert 'Start_date' to datetime
 
-df['Start_date'] = pd.to_datetime(df['Start_date'])
+df['Start_date'] = pd.to_datetime(df['Start_date'], format='mixed')
 
 # Get the minimum and maximum dates from the DataFrame
 
@@ -77,11 +78,11 @@ class Bikesdashboard:
 
 
         # Sidebar: Selection of bike model
-        bike_model = st.sidebar.multiselect(
-            'Select Bike Model:',
-            options=df['Bike_model'].unique(),
-            default=df['Bike_model'].unique()
-        )
+#        bike_model = st.sidebar.multiselect(
+#            'Select Bike Model:',
+#            options=df['Bike_model'].unique(),
+#            default=df['Bike_model'].unique()
+#        )
 
         # Sidebar: Selection of Start Station
         start_station = st.sidebar.multiselect(
@@ -91,7 +92,8 @@ class Bikesdashboard:
         )
 
         # Filter data based on sidebar selection
-        filtered_data = df[(df['Bike_model'].isin(bike_model)) & (df['Start_station'].isin(start_station))]
+#        filtered_data = df[(df['Bike_model'].isin(bike_model))
+        filtered_data = df[df['Start_station'].isin(start_station)]
 
         # Main panel
 
@@ -142,7 +144,7 @@ class Bikesdashboard:
         st.plotly_chart(fig,use_container_width=True,)
 
         # Create the plotly chart figure using the function
-        duration_chart = create_duration_distribution_chart(filtered_data, 'Total_duration__ms_')
+        duration_chart = create_duration_distribution_chart(filtered_data, 'Total_duration')
 
         # Display the chart in Streamlit
         st.plotly_chart(duration_chart, use_container_width=True)

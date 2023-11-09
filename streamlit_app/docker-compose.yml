@@ -16,5 +16,5 @@ services:
     tty: true # eq. to -t in docker run (allows breakpoints)
     environment:
       - CREDENTIALS_PATH=/app/map_dashboard/advanced/wagondataengstu1413-569f3375018f.json
-      - DATASET_NAME=london_bikes_project
-      - TABLE_NAME=journey_table_test
+      - DATASET_NAME=data-eng-q4-23.tfl_project
+      - TABLE_NAME=full_silver

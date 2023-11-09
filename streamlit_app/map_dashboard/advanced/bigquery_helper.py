@@ -19,12 +19,13 @@ def create_bigquery_client(credentials_path):
 #    query_job = client.query(query)
 #    return query_job.result().to_dataframe()
 
-def query_all_from_table(credentials_path, dataset_name, table_name):
-    query = f"SELECT * FROM `{dataset_name}.{table_name}` WHERE Total_duration__ms_ < 8000000 "
+def query_all_from_table(credentials_path, dataset_name, table_name, query, location="US"):
+    if len(query) < 1:
+        query = f"SELECT * FROM `{dataset_name}.{table_name}` WHERE Total_duration__ms_ < 8000000 "
     credentials = service_account.Credentials.from_service_account_file(
         credentials_path,
     )
-    client = bigquery.Client(credentials=credentials, location="europe-west9")
+    client = bigquery.Client(credentials=credentials, location=location)
     query_job = client.query(query)
     return query_job.result().to_dataframe()
 
