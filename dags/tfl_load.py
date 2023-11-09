@@ -13,6 +13,18 @@ from airflow.providers.google.cloud.operators.bigquery import (
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
     GCSToBigQueryOperator)
 
+# #### testing jinja #####
+# from jinja2 import Environment, select_autoescape
+
+# def quote(s):
+#     return f"'{s}'"
+
+# env = Environment(autoescape=select_autoescape(['html', 'xml']))
+# env.filters['quote']= quote
+# #########################
+
+
+
 def get_wanted_files_dates(bucket_name:str, yyyymm:str):
     logging.info(f"Using the following date: {yyyymm}")
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
@@ -36,14 +48,15 @@ PROJECT_ID = os.environ.get("PROJECT_ID")
 DATASET_ID = os.environ.get("DATASET_ID")
 DATASET_ID = "tfl_project"
 TABLE_ID = os.environ.get("TABLE_ID")
-TABLE_ID = "full_silver"
+TABLE_ID = "updated_silver"
 
 with DAG(
     "tfl_load",
     start_date=datetime(2015, 1, 1),
     end_date=datetime(2023,11,1),
-    schedule_interval='@weekly',
-    default_args={"depends_on_past": True},
+    schedule_interval='@monthly',
+    default_args={"depends_on_past": True,
+                  'retry_exponential_backoff': True},
     catchup=True
 ) as dag:
     date='{{ds_nodash[:6]}}'
@@ -78,17 +91,6 @@ with DAG(
     #     schema_fields=schema
     # )
 
-    # remove_existing_data_task = BigQueryInsertJobOperator(
-    #     task_id="remove_existing_data",
-    #     project_id=PROJECT_ID,
-    #     #gcp_conn_id="google_cloud_default",
-    #     configuration={
-    #         "query": {
-    #             "query": f"DELETE FROM wagon1314-de.bike_uk.usage WHERE date = '2022-01-01'",
-    #             "useLegacySql": False,
-    #         }
-    #     },
-    # )
     get_wanted_files_dates_task = PythonOperator(
         task_id="get_wanted_files_dates",
         python_callable=get_wanted_files_dates,
@@ -97,6 +99,19 @@ with DAG(
             "yyyymm":date
         }
     )
+
+    remove_existing_data_task = BigQueryInsertJobOperator(
+        task_id="remove_existing_data",
+        project_id=PROJECT_ID,
+        gcp_conn_id=gcp_con_id,
+        configuration={
+            "query": {
+                "query": f"""DELETE FROM {PROJECT_ID}.{DATASET_ID}.{TABLE_ID} WHERE date IN ({{{{ "\'" +task_instance.xcom_pull(task_ids='get_wanted_files_dates')|map('replace', '.parquet', '')|map('replace', 'silver/', '')|join("\', \'") + "\'"  }}}})""",
+                "useLegacySql": False,
+            }
+        },
+    )
+
 
     load_to_bigquery_task = GCSToBigQueryOperator.partial(
         task_id="load_to_bigquery",
@@ -110,4 +125,4 @@ with DAG(
         #schema_fields=schema
     ).expand(source_objects=get_wanted_files_dates_task.output)
 
-create_dataset_task >> get_wanted_files_dates_task >> load_to_bigquery_task
+create_dataset_task >> get_wanted_files_dates_task >> remove_existing_data_task >> load_to_bigquery_task
