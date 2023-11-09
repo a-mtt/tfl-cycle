@@ -48,14 +48,15 @@ PROJECT_ID = os.environ.get("PROJECT_ID")
 DATASET_ID = os.environ.get("DATASET_ID")
 DATASET_ID = "tfl_project"
 TABLE_ID = os.environ.get("TABLE_ID")
-TABLE_ID = "full_silver"
+TABLE_ID = "updated_silver"
 
 with DAG(
     "tfl_load",
     start_date=datetime(2015, 1, 1),
     end_date=datetime(2023,11,1),
-    schedule_interval='@weekly',
-    default_args={"depends_on_past": True},
+    schedule_interval='@monthly',
+    default_args={"depends_on_past": True,
+                  'retry_exponential_backoff': True},
     catchup=True
 ) as dag:
     date='{{ds_nodash[:6]}}'

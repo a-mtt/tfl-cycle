@@ -42,23 +42,29 @@ def prepare_data(current_date:str, **context):
         logging.info(f'Opening the following file: ./data/bronze/{fi}')
         logging.info(os.path.getsize(f'./data/bronze/{fi}'))
         df = pd.read_parquet(f'./data/bronze/{fi}')
+        is_old_format="Rental Id" in df.columns
 
-        if "Rental Id" in df.columns:
-            df = df.rename(columns={'Rental Id': 'Number',
-                                        'Start Date': 'Start date',
-                                        'End Date': 'End date',
-                                        'StartStation Id':'Start station number',
-                                        'StartStation Name': 'Start station',
-                                        'EndStation Id': 'End station number',
-                                        'EndStation Name': 'End station',
-                                        'Duration': 'Total duration',
-                                        'Bike Id': 'Bike number'
-                                        })
-        else:
+        df = df.rename(columns={'Rental Id': 'Number',
+                                    'Start Date': 'Start date',
+                                    'End Date': 'End date',
+                                    'StartStation Name': 'Start station',
+                                    'Start Station Name': 'Start station',
+                                    'Duration_Seconds': 'Total duration',
+                                    'EndStation Name': 'End station',
+                                    'End Station Name': 'End station',
+                                    'Duration': 'Total duration',
+                                    'Bike Id': 'Bike number'
+                                    })
+        if not is_old_format:
             df = df.drop(['Bike model','Total duration'], axis=1)
             df = df.rename(columns={"Total duration (ms)":"Total duration"})
             df['Total duration'] = df['Total duration'].map(lambda x: x*0.001)
-            df = df.round({'Total duration':0})
+        cols_to_keep=['Number', 'Start date', 'Start station',
+       'End date', 'End station', 'Bike number', 'Total duration']
+        df=df[cols_to_keep]
+        df.dropna(inplace=True)
+        df['Total duration'] = df['Total duration'].map(lambda x: int(x))
+        df['Bike number'] = df['Bike number'].map(lambda x: int(x))
 
         df["date"] = current_date
 
@@ -90,7 +96,7 @@ def upload_to_gcs(bucket_name,**context):
 with DAG(
     "transform",
     start_date=datetime(2015, 1, 1, tzinfo=timezone.utc),
-    schedule_interval='@weekly',
+    schedule_interval='@monthly',
     default_args={"depends_on_past": True},
     catchup=True,
 ) as dag:
@@ -130,7 +136,8 @@ with DAG(
         task_id="upload_to_gcs",
         python_callable=upload_to_gcs,
         op_kwargs={"bucket_name": BUCKET_NAME},
-        provide_context=True
+        provide_context=True,
+        retries=3
     )
 
     get_files_names_task >> download_with_gcs_op >> prepare_data_task >> upload_to_gcs_task
