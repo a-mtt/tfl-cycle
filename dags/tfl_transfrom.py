@@ -1,13 +1,15 @@
 import pandas as pd
 import os
 import time
-
+import logging
 from google.cloud import storage
 
 from datetime import datetime, timezone
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
+from airflow.providers.google.cloud.transfers.gcs_to_local import GCSToLocalFilesystemOperator
 
 BUCKET_NAME = "tfl-cycle-1413"
 
@@ -22,17 +24,23 @@ def get_wanted_files_dates(bucket_name:str, yyyymm:str):
     file_list = []
     for f_date, f_names in zip(get_dates, get_fnames) :
         if f_date.startswith(yyyymm):
-            file_list.append(f'./data/{f_names}')
+            file_list.append(f'bronze/{f_names}')
 
-    return file_list
+    return [
+        {
+        "filename": f'./data/{file}',
+        "object_name": file
+        }
+    for file in file_list]
 
 def prepare_data(current_date:str, **context):
-    time.sleep(10)
     ti=context['ti']
     file_list=ti.xcom_pull(task_ids='get_files_names')
 
     for file in file_list:
-        fi = file.split("/")[-1]
+        fi = file["filename"].split("/")[-1]
+        logging.info(f'Opening the following file: ./data/bronze/{fi}')
+        logging.info(os.path.getsize(f'./data/bronze/{fi}'))
         df = pd.read_parquet(f'./data/bronze/{fi}')
 
         if "Rental Id" in df.columns:
@@ -63,10 +71,10 @@ def download_from_gcs(bucket_name:str, **context):
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
     for file in file_list:
-        fi = file.split("/")[-1]
+        fi = file["filename"].split("/")[-1]
         blob = bucket.blob(f'bronze/{fi}')
         blob.download_to_filename(f'./data/bronze/{fi}')
-        time.sleep(5)
+        time.sleep(15)
 
 def upload_to_gcs(bucket_name,**context):
     ti=context['ti']
@@ -75,7 +83,7 @@ def upload_to_gcs(bucket_name,**context):
     storage_client = storage.Client.from_service_account_json(os.environ.get('GOOGLE_JSON_PATH'))
     bucket = storage_client.get_bucket(bucket_name)
     for file in file_list:
-        fi = file.split("/")[-1]
+        fi = file["filename"].split("/")[-1]
         blob = bucket.blob(f'silver/{fi}')
         blob.upload_from_filename(f'./data/silver/{fi}')
 
@@ -89,6 +97,7 @@ with DAG(
 
     current_year_month = '{{ds_nodash[:6]}}'
     current_date = '{{ds_nodash}}'
+    gcp_con_id='google_conn'
 
     get_files_names_task = PythonOperator(
         task_id="get_files_names",
@@ -97,18 +106,24 @@ with DAG(
                    "yyyymm":current_year_month}
     )
 
-    download_from_gcs_task = PythonOperator(
+    # download_from_gcs_task = PythonOperator(
+    #     task_id="download_from_gcs",
+    #     python_callable=download_from_gcs,
+    #     op_kwargs={"bucket_name": BUCKET_NAME},
+    #     provide_context=True
+    # )
+    download_with_gcs_op = GCSToLocalFilesystemOperator.partial(
         task_id="download_from_gcs",
-        python_callable=download_from_gcs,
-        op_kwargs={"bucket_name": BUCKET_NAME},
-        provide_context=True
-    )
+        gcp_conn_id=gcp_con_id,
+        bucket=BUCKET_NAME
+    ).expand_kwargs(get_files_names_task.output)
 
     prepare_data_task = PythonOperator(
         task_id="prepare_data",
         python_callable=prepare_data,
         op_kwargs={"current_date":current_date},
-        provide_context=True
+        provide_context=True,
+        retries=3
     )
 
     upload_to_gcs_task = PythonOperator(
@@ -118,4 +133,4 @@ with DAG(
         provide_context=True
     )
 
-    get_files_names_task >> download_from_gcs_task >> prepare_data_task >> upload_to_gcs_task
+    get_files_names_task >> download_with_gcs_op >> prepare_data_task >> upload_to_gcs_task
