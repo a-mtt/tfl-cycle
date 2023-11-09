@@ -7,19 +7,29 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
+<<<<<<< HEAD
+apache-airflow = "2.7.3"
+=======
+>>>>>>> b9dd438a190c767c43ddf2b7ecaa52dfa3baa64f
 requests = "^2.31.0"
 beautifulsoup4 = "^4.12.2"
 lxml = "^4.9.3"
-pandas = "2.0.3"
 pyarrow = "^14.0.0"
+<<<<<<< HEAD
+=======
 apache-airflow = "2.7.3"
+>>>>>>> b9dd438a190c767c43ddf2b7ecaa52dfa3baa64f
 psycopg2-binary = "^2.9.9"
 apache-airflow-providers-postgres = "^5.7.1"
 google-cloud-storage = "^2.13.0"
 apache-airflow-providers-google = "^10.11.0"
+<<<<<<< HEAD
+
+=======
+>>>>>>> b9dd438a190c767c43ddf2b7ecaa52dfa3baa64f
 
 [tool.poetry.group.dev.dependencies]
-ipykernel = "^6.26.0"
+
 
 [build-system]
 requires = ["poetry-core"]

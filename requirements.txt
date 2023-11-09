@@ -1,0 +1,8 @@
+apache-airflow==2.7.3
+requests
+beautifulsoup4
+lxml
+pyarrow
+psycopg2-binary
+apache-airflow-providers-postgres
+google-cloud-storage
