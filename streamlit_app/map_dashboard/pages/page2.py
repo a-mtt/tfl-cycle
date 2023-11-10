@@ -15,8 +15,8 @@ bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
 #    return query_all_from_table(client, dataset_name, table_name)
 
 
-st.title('Page 2')
-st.write('This is the content of page 2.')
+st.title('Top routes Map')
+st.write('The geographic arcs on this map display the top routes that bikes renters ride on. From each district spans an arc that displays the most common district destination.')
 
 # Cache the query to prevent re-running it on each app interaction
 

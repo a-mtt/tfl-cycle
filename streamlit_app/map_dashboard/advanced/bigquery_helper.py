@@ -38,6 +38,13 @@ def query_map_one():
     return query_job.result().to_dataframe()
 
 @st.cache_data
+def query_map_two():
+    client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
+    query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_per_hourmin`"
+    query_job = client.query(query)
+    return query_job.result().to_dataframe()
+
+@st.cache_data
 def query_start_district():
     client = create_bigquery_client(credentials_path = CREDENTIALS_PATH)
     query = "SELECT * FROM `data-eng-q4-23.tfl_project.rides_daily_per_district_start`"

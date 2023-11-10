@@ -91,6 +91,7 @@ class Bikesdashboard:
         # Create the plotly chart figure using the function
         bin_width_options = [4, 8, 12, 16]  # Define your own bin width options as needed.
         bin_width = st.sidebar.selectbox('Select bin width:', options=bin_width_options, index=0)
+        df_hist = df_hist[(df_hist['Start_date'].dt.date >= selected_range[0]) & (df_hist['Start_date'].dt.date <= selected_range[1])]
         hist_figure = create_histogram(df_hist, bin_width)
 
         # Display the chart in Streamlit

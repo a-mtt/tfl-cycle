@@ -1,23 +1,4 @@
-import streamlit as st
-from streamlit_keplergl import keplergl_static
-from keplergl import KeplerGl
-from map_dashboard.advanced.bigquery_helper import *
-import os
-import json
-
-st.set_page_config(layout="wide")
-
-CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH')
-bq_client = create_bigquery_client(credentials_path=CREDENTIALS_PATH)
-
-st.title('Daily Seasonality Map')
-st.write('This interactive map showcases the daily seasonality patterns. Each volume represents bikes that are being taken during the selected timeframe')
-
-# Cache the query to prevent re-running it on each app interaction
-
-table_data = query_map_two()
-
-config =  {
+{
     "version": "v1",
     "config": {
         "visState": {
@@ -35,10 +16,10 @@ config =  {
                         -2208963657792.007,
                         -2208953819792.007
                     ],
-                    "enlarged": True,
+                    "enlarged": true,
                     "plotType": "histogram",
                     "animationWindow": "free",
-                    "yAxis": None,
+                    "yAxis": null,
                     "speed": 4.992
                 }
             ],
@@ -64,7 +45,7 @@ config =  {
                             "lat": "lat_start",
                             "lng": "lon_start"
                         },
-                        "isVisible": True,
+                        "isVisible": true,
                         "visConfig": {
                             "opacity": 0.8,
                             "worldUnitSize": 0.4,
@@ -80,7 +61,7 @@ config =  {
                                     "#900C3F",
                                     "#5A1846"
                                 ],
-                                "reversed": True
+                                "reversed": true
                             },
                             "coverage": 1,
                             "sizeRange": [
@@ -96,15 +77,15 @@ config =  {
                                 100
                             ],
                             "elevationScale": 10,
-                            "enableElevationZoomFactor": True,
+                            "enableElevationZoomFactor": true,
                             "colorAggregation": "average",
                             "sizeAggregation": "average",
-                            "enable3d": True
+                            "enable3d": true
                         },
-                        "hidden": False,
+                        "hidden": false,
                         "textLabel": [
                             {
-                                "field": None,
+                                "field": null,
                                 "color": [
                                     255,
                                     255,
@@ -140,64 +121,64 @@ config =  {
                         "data_1": [
                             {
                                 "name": "hour",
-                                "format": None
+                                "format": null
                             },
                             {
                                 "name": "minute",
-                                "format": None
+                                "format": null
                             },
                             {
                                 "name": "nb_rides",
-                                "format": None
+                                "format": null
                             },
                             {
                                 "name": "date",
-                                "format": None
+                                "format": null
                             }
                         ]
                     },
-                    "compareMode": False,
+                    "compareMode": false,
                     "compareType": "absolute",
-                    "enabled": True
+                    "enabled": true
                 },
                 "brush": {
                     "size": 0.5,
-                    "enabled": False
+                    "enabled": false
                 },
                 "geocoder": {
-                    "enabled": False
+                    "enabled": false
                 },
                 "coordinate": {
-                    "enabled": False
+                    "enabled": false
                 }
             },
             "layerBlending": "normal",
             "splitMaps": [],
             "animationConfig": {
-                "currentTime": None,
+                "currentTime": null,
                 "speed": 1
             }
         },
         "mapState": {
             "bearing": 24,
-            "dragRotate": True,
+            "dragRotate": true,
             "latitude": 51.566643340250934,
             "longitude": -0.04851443212952115,
             "pitch": 50,
             "zoom": 10.020420224058581,
-            "isSplit": False
+            "isSplit": false
         },
         "mapStyle": {
             "styleType": "dark",
             "topLayerGroups": {},
             "visibleLayerGroups": {
-                "label": True,
-                "road": True,
-                "border": False,
-                "building": True,
-                "water": True,
-                "land": True,
-                "3d building": False
+                "label": true,
+                "road": true,
+                "border": false,
+                "building": true,
+                "water": true,
+                "land": true,
+                "3d building": false
             },
             "threeDBuildingColor": [
                 9.665468314072013,
@@ -208,8 +189,3 @@ config =  {
         }
     }
 }
-
-map_1 = KeplerGl(height=800, data={'data_1': table_data}, config=config)
-keplergl_static(map_1)
-
-st.write("This is a kepler.gl map in streamlit")
