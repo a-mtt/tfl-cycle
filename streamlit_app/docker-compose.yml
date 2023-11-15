@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  streamlit:
+    build:
+      context: .
+    restart: always
+    volumes:
+      - ./.streamlit:/app/.streamlit/
+      - ./map_dashboard:/app/map_dashboard/
+    command: ["streamlit", "run", "map_dashboard/Home page.py"]
+    ports:
+      - 8501:8501
+#   depends_on:
+#      - database
+    stdin_open: true # eq. to -i in docker run (allows breakpoints)
+    tty: true # eq. to -t in docker run (allows breakpoints)
+    environment:
+      - CREDENTIALS_PATH=/app/map_dashboard/advanced/wagondataengstu1413-569f3375018f.json
+      - DATASET_NAME=data-eng-q4-23.tfl_project
+      - TABLE_NAME=full_silver

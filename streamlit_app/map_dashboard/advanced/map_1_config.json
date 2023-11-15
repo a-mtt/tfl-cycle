@@ -1,0 +1,157 @@
+{
+    "version": "v1",
+    "config": {
+        "visState": {
+            "filters": [],
+            "layers": [
+                {
+                    "id": "ywcmmh6",
+                    "type": "arc",
+                    "config": {
+                        "dataId": "data_1",
+                        "label": "new layer",
+                        "color": [
+                            255,
+                            203,
+                            153
+                        ],
+                        "highlightColor": [
+                            252,
+                            242,
+                            26,
+                            255
+                        ],
+                        "columns": {
+                            "lat0": "lat_start",
+                            "lng0": "lon_start",
+                            "lat1": "lat_end",
+                            "lng1": "lon_end"
+                        },
+                        "isVisible": true,
+                        "visConfig": {
+                            "opacity": 0.8,
+                            "thickness": 7.2,
+                            "colorRange": {
+                                "name": "Global Warming",
+                                "type": "sequential",
+                                "category": "Uber",
+                                "colors": [
+                                    "#FFC300",
+                                    "#F1920E",
+                                    "#E3611C",
+                                    "#C70039",
+                                    "#900C3F",
+                                    "#5A1846"
+                                ],
+                                "reversed": true
+                            },
+                            "sizeRange": [
+                                0,
+                                10
+                            ],
+                            "targetColor": null
+                        },
+                        "hidden": false,
+                        "textLabel": [
+                            {
+                                "field": null,
+                                "color": [
+                                    255,
+                                    255,
+                                    255
+                                ],
+                                "size": 18,
+                                "offset": [
+                                    0,
+                                    0
+                                ],
+                                "anchor": "start",
+                                "alignment": "center"
+                            }
+                        ]
+                    },
+                    "visualChannels": {
+                        "colorField": {
+                            "name": "nb_rides",
+                            "type": "integer"
+                        },
+                        "colorScale": "quantile",
+                        "sizeField": null,
+                        "sizeScale": "linear"
+                    }
+                }
+            ],
+            "interactionConfig": {
+                "tooltip": {
+                    "fieldsToShow": {
+                        "data_1": [
+                            {
+                                "name": "district_start",
+                                "format": null
+                            },
+                            {
+                                "name": "district_end",
+                                "format": null
+                            },
+                            {
+                                "name": "nb_rides",
+                                "format": null
+                            },
+                            {
+                                "name": "rank",
+                                "format": null
+                            }
+                        ]
+                    },
+                    "compareMode": false,
+                    "compareType": "absolute",
+                    "enabled": true
+                },
+                "brush": {
+                    "size": 0.5,
+                    "enabled": false
+                },
+                "geocoder": {
+                    "enabled": false
+                },
+                "coordinate": {
+                    "enabled": false
+                }
+            },
+            "layerBlending": "normal",
+            "splitMaps": [],
+            "animationConfig": {
+                "currentTime": null,
+                "speed": 1
+            }
+        },
+        "mapState": {
+            "bearing": 24,
+            "dragRotate": true,
+            "latitude": 51.45760051693673,
+            "longitude": -0.14506746719368874,
+            "pitch": 50,
+            "zoom": 11.766363092491126,
+            "isSplit": false
+        },
+        "mapStyle": {
+            "styleType": "dark",
+            "topLayerGroups": {},
+            "visibleLayerGroups": {
+                "label": true,
+                "road": true,
+                "border": false,
+                "building": true,
+                "water": true,
+                "land": true,
+                "3d building": false
+            },
+            "threeDBuildingColor": [
+                9.665468314072013,
+                17.18305478057247,
+                31.1442867897876
+            ],
+            "mapStyles": {}
+        }
+    }
+}

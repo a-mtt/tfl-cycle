@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "Visualization"
+version = "0.1.0"
+description = ""
+authors = ["C. Gleizes <charles.gleizes.perso@gmail.com>"]
+packages = [{include = "map_dashboard"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8.0,<3.9.7 || >3.9.7,<4.0.0"
+SQLAlchemy = "^1.4.37"
+psycopg2-binary = "^2.9.3"
+matplotlib = "^3.6.2"
+plotly = "^5.11.0"
+streamlit = "^1.27.2"
+streamlit_keplergl = "*"
+keplergl = "*"
+google-cloud = "^0.34.0"
+google-cloud-bigquery = "^3.13.0"
+db-dtypes = "1.1.1"
+
+
+[tool.poetry.dev-dependencies]
+pytest = "7.1.2"
+ipython = "^8.4.0"
+black = "^22.3.0"
+isort = "^5.10.1"
+watchdog = "^2.1.8"
+pytest-mock = "^3.7.0"
+Sphinx = "^5.0.1"
+sphinx-rtd-theme = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.19.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 160
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 160
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.pytest.ini_options]
+markers = ["optional: not required, nor saved in test_output.txt"]
+
+[virtualenvs]
+in-project = true
