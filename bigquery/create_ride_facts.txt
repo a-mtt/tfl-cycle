@@ -1,0 +1,45 @@
+CREATE OR REPLACE TABLE `data-eng-q4-23.tfl_project.rides_facts` AS
+SELECT 
+    f.Start_date,
+    COALESCE(s1.station_number, d1.station_number) as Start_station,
+    f.Total_duration,
+    COALESCE(s2.station_number, d2.station_number) as End_station,
+    f.date
+FROM (
+    SELECT 
+        Start_date,
+        REGEXP_REPLACE(
+            REGEXP_REPLACE(
+                TRIM(Start_station), 
+                r"(.*),\s*(.*)", 
+                r"\1, \2"
+            ),
+            r"((.*), Regent's Park|Regents Park)",
+            r"\1, The Regent's Park"
+        ) as Start_station,
+        Total_duration,
+        REGEXP_REPLACE(
+            REGEXP_REPLACE(
+                TRIM(End_station), 
+                r"(.*),\s*(.*)", 
+                r"\1, \2"
+            ),
+            r"((.*), Regent's Park|Regents Park)",
+            r"\1, The Regent's Park"
+        ) as End_station,
+        date
+    FROM `data-eng-q4-23.tfl_project.full_silver`
+) f
+LEFT JOIN `data-eng-q4-23.tfl_project.stations_dim` s1
+ON f.Start_station = s1.commonName
+LEFT JOIN `data-eng-q4-23.tfl_project.stations_dim` s2
+ON f.End_station = s2.commonName
+LEFT JOIN `data-eng-q4-23.tfl_project.stations_dim` d1
+ON SPLIT(f.Start_station, ',')[SAFE_OFFSET(1)] = d1.district
+LEFT JOIN `data-eng-q4-23.tfl_project.stations_dim` d2
+ON SPLIT(f.End_station, ',')[SAFE_OFFSET(1)] = d2.district
+WHERE f.Start_date IS NOT NULL
+AND COALESCE(s1.station_number, d1.station_number) IS NOT NULL
+AND f.Total_duration IS NOT NULL
+AND COALESCE(s2.station_number, d2.station_number) IS NOT NULL
+AND f.date IS NOT NULL
