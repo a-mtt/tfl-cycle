@@ -1,0 +1,25 @@
+CREATE OR REPLACE TABLE `data-eng-q4-23.tfl_project.stations_dim` AS
+SELECT 
+    station_number,
+    commonName,
+    district
+FROM `data-eng-q4-23.tfl_project.stations_silver`
+UNION ALL
+SELECT 
+    LPAD(CAST(ROW_NUMBER() OVER() AS STRING), 6, '9') as station_number,
+    CONCAT(district, ", ", district) as commonName,
+    district
+FROM (
+    SELECT DISTINCT district
+    FROM `data-eng-q4-23.tfl_project.stations_silver`
+)
+UNION ALL
+SELECT "999999" as station_number, "Bromley, Bromley" as commonName, "Bromley" as district
+UNION ALL
+SELECT "999998" as station_number, "Great College Street, Great College Street" as commonName, "Great College Street" as district
+UNION ALL
+SELECT "999997" as station_number, "Lambeth, Lambeth" as commonName, "Lambeth" as district
+UNION ALL
+SELECT "999996" as station_number, "Shepherds Bush, Shepherds Bush" as commonName, "Shepherds Bush" as district
+UNION ALL
+SELECT "999995" as station_number, "Weavers, Weavers" as commonName, "Weavers" as district
